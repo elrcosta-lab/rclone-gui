@@ -1,7 +1,7 @@
 # Spec: Gerenciamento de Remotos (Config de Backends)
 
-**Versão:** 1.0
-**Status:** Rascunho
+**Versão:** 1.1
+**Status:** Implementado
 **Autor:** Emerson
 **Data:** 2026-07-04
 **Reviewers:** N/A

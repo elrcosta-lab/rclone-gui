@@ -5,7 +5,7 @@ build-backend = "setuptools.backends._legacy:_Backend"
 [project]
 name = "rclone-gui"
 version = "0.1.0"
-description = "Interface gráfica para rclone — estilo Google Drive for desktop"
+description = "Interface gráfica para rclone — gerencie remotos, sincronize arquivos, monte drives VFS e verifique integridade sem terminal."
 requires-python = ">=3.10"
 license = {text = "MIT"}
 dependencies = [

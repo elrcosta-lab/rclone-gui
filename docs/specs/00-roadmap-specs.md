@@ -67,15 +67,15 @@ Cada spec segue o template `sdd-spec` com as 15 seções:
 
 ## Status das Specs
 
-| Spec | Status | Score SDD estimado | Última atualização |
+| Spec | Status | Última atualização |
 |------|--------|-------------------|-------------------|
-| 01 — Gerenciamento de Remotos | Rascunho | [A AVALIAR] | 2026-07-04 |
-| 02 — Explorador de Arquivos | Rascunho | [A AVALIAR] | 2026-07-04 |
-| 03 — Jobs de Sync | Rascunho | [A AVALIAR] | 2026-07-04 |
-| 04 — Montagem VFS | Rascunho | [A AVALIAR] | 2026-07-04 |
-| 05 — Transferências Copy/Move | Rascunho | [A AVALIAR] | 2026-07-04 |
-| 06 — Verificação e Integridade | Rascunho | [A AVALIAR] | 2026-07-04 |
-| 07 — Daemon, Tray e Autostart | Rascunho | [A AVALIAR] | 2026-07-04 |
+| 01 — Gerenciamento de Remotos | Implementado | 2026-07-04 |
+| 02 — Explorador de Arquivos | Implementado | 2026-07-04 |
+| 03 — Jobs de Sync | Implementado | 2026-07-04 |
+| 04 — Montagem VFS | Implementado | 2026-07-04 |
+| 05 — Transferências Copy/Move | Implementado | 2026-07-04 |
+| 06 — Verificação e Integridade | Implementado | 2026-07-04 |
+| 07 — Daemon, Tray e Autostart | Implementado | 2026-07-04 |
 
 ---
 
@@ -84,3 +84,4 @@ Cada spec segue o template `sdd-spec` com as 15 seções:
 | Versão | Data | Autor | Mudanças |
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial — 7 specs definidas, ordem de implementação e dependências mapeadas |
+| 1.1 | 2026-07-04 | Emerson | Todas as specs implementadas e testadas (132/132 testes) — atualização de status para Implementado |
