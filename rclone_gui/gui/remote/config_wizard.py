@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Optional
 
 from PySide6.QtCore import Qt, QProcess
@@ -177,14 +178,11 @@ class ConfigWizard(QDialog):
         data = self._auth_process.readAllStandardOutput().data().decode()
         self._auth_output += data
 
-        for line in data.split("\n"):
-            line = line.strip()
-            if "http" in line.lower() and "rclone" in line.lower():
-                self._auth_url_label.setText(f"URL: {line}")
-                self._auth_url_label.show()
-            elif line.startswith("http"):
-                self._auth_url_label.setText(f"URL: {line}")
-                self._auth_url_label.show()
+        urls = re.findall(r'https?://[^\s<>"]+', data)
+        if urls:
+            self._auth_url_label.setText(f"URL: {urls[0]}")
+            self._auth_url_label.show()
+            self._auth_status.setText("Abrindo navegador... Se não abrir, copie o URL acima.")
 
         if "token" in self._auth_output.lower() or "response" in self._auth_output.lower():
             self._auth_status.setText("Autorização recebida! Salvando...")
