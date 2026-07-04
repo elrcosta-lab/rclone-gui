@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 from typing import Optional
 
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
+from PySide6.QtCore import Qt, QObject, QThread, Signal
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
     QTreeView, QFileSystemModel, QLabel, QComboBox,
@@ -14,25 +15,62 @@ from PySide6.QtGui import QAction
 from ...services.rclone_service import RcloneService
 
 
-class RemoteFileModel(QThread):
+class RemoteFileModel(QObject):
     listing_ready = Signal(list)
 
     def __init__(self, rclone: RcloneService, parent=None):
         super().__init__(parent)
         self.rclone = rclone
         self.current_path = ""
-        self._items: list[dict] = []
+        self._thread = None
+        self._worker = None
+
+    def _cleanup_thread(self):
+        try:
+            if self._thread is not None:
+                if self._thread.isRunning():
+                    self._thread.quit()
+                    if not self._thread.wait(2000):
+                        self._thread.terminate()
+                        self._thread.wait(1000)
+                self._thread.deleteLater()
+                self._thread = None
+            if self._worker is not None:
+                self._worker.deleteLater()
+                self._worker = None
+        except RuntimeError:
+            pass
 
     def navigate(self, path: str):
         self.current_path = path
-        self.start()
+        self._cleanup_thread()
+        self._worker = _LsWorker(self.rclone, path)
+        self._worker.listing_done.connect(self._on_worker_done)
+        self._thread = QThread()
+        self._worker.moveToThread(self._thread)
+        self._thread.started.connect(self._worker.do_work)
+        self._worker.listing_done.connect(self._thread.quit, Qt.QueuedConnection)
+        self._thread.finished.connect(self._worker.deleteLater)
+        self._thread.start()
 
-    def run(self):
-        items = self.rclone.lsjson(self.current_path)
+    def _on_worker_done(self, items: list[dict]):
         self.listing_ready.emit(items)
 
-    def items(self) -> list[dict]:
-        return self._items
+    def shutdown(self):
+        self._cleanup_thread()
+
+
+class _LsWorker(QObject):
+    listing_done = Signal(list)
+
+    def __init__(self, rclone: RcloneService, path: str):
+        super().__init__()
+        self._rclone = rclone
+        self._path = path
+
+    def do_work(self):
+        items = self._rclone.lsjson(self._path)
+        self.listing_done.emit(items)
 
 
 class FilePanel(QWidget):
@@ -48,7 +86,12 @@ class FilePanel(QWidget):
         self._local_model = QFileSystemModel()
         self._is_local = True
         self._items: list[dict] = []
+        self._items_by_row: list[dict] = []
         self._setup_ui(label)
+
+    def closeEvent(self, event):
+        self._remote_model.shutdown()
+        event.accept()
 
     def _setup_ui(self, label: str):
         layout = QVBoxLayout(self)
@@ -92,10 +135,13 @@ class FilePanel(QWidget):
         layout.addWidget(self._info)
 
     def set_remotes(self, remotes: list[str]):
+        self._source_combo.blockSignals(True)
         self._source_combo.clear()
         self._source_combo.addItem("Sistema Local")
         for r in remotes:
             self._source_combo.addItem(f"{r}:")
+        self._source_combo.blockSignals(False)
+        self._source_combo.setCurrentIndex(0)
 
     def current_path(self) -> str:
         return self._current_path
@@ -108,9 +154,10 @@ class FilePanel(QWidget):
                 if self._is_local:
                     paths.append(self._local_model.filePath(idx))
                 else:
-                    row = idx.row()
-                    if row < len(self._items):
-                        paths.append(f"{self._current_path}/{self._items[row].get('Name', '')}")
+                    entry_json = idx.data(Qt.UserRole + 1)
+                    if entry_json:
+                        entry = json.loads(entry_json)
+                        paths.append(f"{self._current_path}/{entry.get('Name', '')}")
         return list(set(paths))
 
     def _on_source_changed(self, idx: int):
@@ -137,12 +184,20 @@ class FilePanel(QWidget):
 
     def _refresh(self):
         if self._is_local:
-            self._local_model.refresh()
+            import os
+            current = self._current_path or "/"
+            parent = os.path.dirname(current) or "/"
+            self._local_model.setRootPath(parent)
+            root_idx = self._local_model.setRootPath(current)
+            self._tree.setRootIndex(root_idx)
         else:
             self._remote_model.navigate(self._current_path)
 
     def _on_listing_ready(self, items: list[dict]):
+        if self._is_local:
+            return
         self._items = items
+        self._items_by_row = []
         self._tree.setModel(None)
         from PySide6.QtGui import QStandardItemModel, QStandardItem
         model = QStandardItemModel()
@@ -151,18 +206,22 @@ class FilePanel(QWidget):
         dirs = [i for i in items if i.get("IsDir")]
         files = [i for i in items if not i.get("IsDir")]
         for entry in dirs + files:
+            self._items_by_row.append(entry)
             name = entry.get("Name", "?")
             size = entry.get("Size", 0)
             mod = entry.get("ModTime", "")
             fmt_size = self._format_size(size) if not entry.get("IsDir") else "<DIR>"
             row = [QStandardItem(name), QStandardItem(fmt_size), QStandardItem(mod[:16] if mod else "")]
-            if entry.get("IsDir"):
-                name_item = row[0]
-                name_item.setData("dir", Qt.UserRole + 1)
+            # Armazena entrada serializada em JSON — seguro para QVariant
+            entry_json = json.dumps(entry)
+            for item in row:
+                item.setData(entry_json, Qt.UserRole + 1)
             model.appendRow(row)
 
+        self._tree.setSortingEnabled(False)
         self._tree.setModel(model)
-        self._info.setText(f"{len(items)} iteins")
+        self._tree.setSortingEnabled(True)
+        self._info.setText(f"{len(items)} itens")
 
     def _on_double_click(self, index):
         if self._is_local:
@@ -171,13 +230,15 @@ class FilePanel(QWidget):
                 self._current_path = path
                 self._breadcrumb.setText(path)
         else:
-            if index.column() == 0 and index.row() < len(self._items):
-                entry = self._items[index.row()]
-                if entry.get("IsDir"):
-                    name = entry.get("Name", "")
-                    self._current_path = f"{self._current_path}/{name}".replace("//", "/")
-                    self._breadcrumb.setText(self._current_path)
-                    self._remote_model.navigate(self._current_path)
+            if index.column() == 0:
+                entry_json = index.data(Qt.UserRole + 1)
+                if entry_json:
+                    entry = json.loads(entry_json)
+                    if entry.get("IsDir"):
+                        name = entry.get("Name", "")
+                        self._current_path = f"{self._current_path}/{name}".replace("//", "/")
+                        self._breadcrumb.setText(self._current_path)
+                        self._remote_model.navigate(self._current_path)
 
     def _context_menu(self, pos):
         menu = QMenu()

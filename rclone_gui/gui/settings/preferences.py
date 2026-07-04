@@ -81,6 +81,8 @@ class PreferencesDialog(QDialog):
         self._load()
 
     def _load(self):
+        if self.db.conn is None:
+            return
         self._tray_cb.setChecked(self.db.get_config("tray_enabled", 1))
         self._minimize_cb.setChecked(self.db.get_config("minimize_to_tray", 1))
         self._close_cb.setChecked(self.db.get_config("close_to_tray", 1))

@@ -72,8 +72,8 @@ class RcloneService:
     def authorize(self, backend_type: str) -> subprocess.Popen:
         return self._run_async("authorize", backend_type)
 
-    def about(self, remote: str) -> dict:
-        r = self._run("about", f"{remote}:", timeout=15)
+    def about(self, remote: str, timeout: int = 90) -> dict:
+        r = self._run("about", "--json", f"{remote}:", timeout=timeout)
         if r.returncode != 0:
             return {}
         try:
@@ -124,6 +124,34 @@ class RcloneService:
                 k, v = line.split("=", 1)
                 result[k.strip()] = v.strip()
         return result
+
+    def copy(self, source: str, destination: str, flags: dict | None = None) -> tuple[bool, str]:
+        args = ["copy", source, destination]
+        if flags:
+            for k, v in flags.items():
+                if isinstance(v, bool):
+                    if v:
+                        args.append(f"--{k.replace('_', '-')}")
+                else:
+                    args.append(f"--{k.replace('_', '-')}={v}")
+        r = self._run(*args, timeout=300)
+        if r.returncode == 0:
+            return True, ""
+        return False, r.stderr.strip() or r.stdout.strip()
+
+    def move(self, source: str, destination: str, flags: dict | None = None) -> tuple[bool, str]:
+        args = ["move", source, destination]
+        if flags:
+            for k, v in flags.items():
+                if isinstance(v, bool):
+                    if v:
+                        args.append(f"--{k.replace('_', '-')}")
+                else:
+                    args.append(f"--{k.replace('_', '-')}={v}")
+        r = self._run(*args, timeout=300)
+        if r.returncode == 0:
+            return True, ""
+        return False, r.stderr.strip() or r.stdout.strip()
 
     @classmethod
     def load_backends_catalog(cls) -> list[BackendMeta]:

@@ -248,19 +248,50 @@ class JobListWidget(QWidget):
         job_id = self._selected_id()
         if not job_id:
             return
-        from datetime import datetime
         job = self.job_service.get_job(job_id)
         if not job:
             return
+        dry = False
         if job.dry_run_first:
             reply = QMessageBox.question(
                 self, "Executar Dry-Run",
                 "Dry-run está ativado para este job.\nExecutar dry-run primeiro?",
                 QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.Yes:
-                QMessageBox.information(self, "Dry-Run",
-                                        "Dry-run em andamento.\n"
-                                        "Funcionalidade completa em breve.")
-                return
-        QMessageBox.information(self, "Executar",
-                                f"Executando job '{job.name}'...\nProgresso em breve.")
+                dry = True
+            else:
+                reply2 = QMessageBox.question(
+                    self, "Confirmar",
+                    "Pular dry-run e executar o job real?",
+                    QMessageBox.Yes | QMessageBox.No)
+                if reply2 != QMessageBox.Yes:
+                    return
+        try:
+            if dry:
+                orig_flags = job.flags.copy()
+                job.flags["dry_run"] = True
+                proc, exec_id = self.job_service.execute_job(job)
+                job.flags = orig_flags
+            else:
+                proc, exec_id = self.job_service.execute_job(job)
+            stdout, _ = proc.communicate(timeout=300)
+            ok = proc.returncode == 0
+            self.job_service.complete_execution(
+                exec_id,
+                status="success" if ok else "failed",
+                log=stdout or "",
+                error_msg="" if ok else (stdout or "Erro desconhecido"),
+            )
+            if ok:
+                QMessageBox.information(
+                    self, "Concluído",
+                    f"Job '{job.name}' executado com sucesso."
+                )
+            else:
+                QMessageBox.critical(
+                    self, "Erro",
+                    f"Job '{job.name}' falhou:\n{stdout[:500]}"
+                )
+            self.refresh()
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", str(e))

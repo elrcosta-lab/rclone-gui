@@ -1,6 +1,6 @@
 # Spec: Verificação e Integridade
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Status:** Implementado
 **Autor:** Emerson
 **Data:** 2026-07-04
@@ -220,3 +220,5 @@ Não há persistência dedicada. Relatórios de verificação podem ser salvos c
 | Versão | Data | Autor | Mudanças |
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial |
+| 1.1 | 2026-07-04 | Emerson | Implementação completa: check tool com origem/destino, checksum toggle, export CSV |
+| 1.2 | 2026-07-04 | Emerson | Fix: validação 36/36 confirma check tool UI fields presentes |

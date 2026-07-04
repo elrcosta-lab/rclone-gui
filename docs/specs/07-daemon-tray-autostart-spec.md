@@ -1,6 +1,6 @@
 # Spec: Daemon, System Tray e Autostart
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Status:** Implementado
 **Autor:** Emerson
 **Data:** 2026-07-04
@@ -308,3 +308,5 @@ Sim — criar tabela `app_config` na primeira inicialização.
 | Versão | Data | Autor | Mudanças |
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial |
+| 1.1 | 2026-07-04 | Emerson | Implementação completa: tray manager, autostart .desktop, rcd subprocess, notificações D-Bus |
+| 1.2 | 2026-07-04 | Emerson | Fix: `setup_autostart`/`remove_autostart` adicionadas em `notification.py`. rcd test corrigido GET→POST. Validação 36/36 confirma tray, autostart e rcd |

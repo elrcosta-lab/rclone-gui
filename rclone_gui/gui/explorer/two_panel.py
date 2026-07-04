@@ -48,10 +48,17 @@ class TwoPanelBrowser(QWidget):
         dst = self._right_panel.current_path()
         if not files:
             return
+        ok, msg = self._run_transfer(files, dst, move=False)
         from PySide6.QtWidgets import QMessageBox
-        QMessageBox.information(self, "Copiar",
-                                f"Copiar {len(files)} arquivo(s) para {dst}\n"
-                                "Funcionalidade completa em breve.")
+        if ok:
+            QMessageBox.information(
+                self, "Copiar",
+                f"{len(files)} arquivo(s) copiados com sucesso para {dst}."
+            )
+            self._left_panel._refresh()
+            self._right_panel._refresh()
+        else:
+            QMessageBox.critical(self, "Erro na Cópia", msg)
 
     def _move_to_right(self):
         files = self._left_panel.selected_files()
@@ -59,7 +66,7 @@ class TwoPanelBrowser(QWidget):
         if not files:
             return
         from PySide6.QtWidgets import QMessageBox, QDialog, QVBoxLayout, QCheckBox
-        from PySide6.QtWidgets import QDialogButtonBox
+        from PySide6.QtWidgets import QDialogButtonBox, QLabel
         dialog = QDialog(self)
         dialog.setWindowTitle("Mover Arquivos")
         layout = QVBoxLayout(dialog)
@@ -72,5 +79,33 @@ class TwoPanelBrowser(QWidget):
         btns.rejected.connect(dialog.reject)
         layout.addWidget(btns)
         if dialog.exec():
-            QMessageBox.information(self, "Transferência",
-                                    "Em andamento — implementação completa em breve.")
+            flags = {"dry_run": True} if dry.isChecked() else {}
+            ok, msg = self._run_transfer(files, dst, move=True, flags=flags)
+            if dry.isChecked() and ok:
+                reply = QMessageBox.question(
+                    self, "Confirmar Mover",
+                    "Dry-run concluído. Deseja executar a movimentação real?",
+                    QMessageBox.Yes | QMessageBox.No,
+                )
+                if reply == QMessageBox.Yes:
+                    ok, msg = self._run_transfer(files, dst, move=True)
+            if ok:
+                QMessageBox.information(
+                    self, "Mover",
+                    f"{len(files)} arquivo(s) movidos com sucesso para {dst}."
+                )
+                self._left_panel._refresh()
+                self._right_panel._refresh()
+            else:
+                QMessageBox.critical(self, "Erro na Movimentação", msg)
+
+    def _run_transfer(self, files: list[str], dst: str, move: bool = False,
+                      flags: dict | None = None) -> tuple[bool, str]:
+        for src in files:
+            if move:
+                ok, msg = self.rclone.move(src, dst, flags)
+            else:
+                ok, msg = self.rclone.copy(src, dst, flags)
+            if not ok:
+                return False, f"Falha em {src}:\n{msg}"
+        return True, ""

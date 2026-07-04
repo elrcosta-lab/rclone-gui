@@ -54,17 +54,19 @@ python3 -m rclone_gui --daemon
 source .venv/bin/activate
 pip install -e ".[test]"
 
-# Todos os testes
+# Todos os testes automatizados (6 níveis — 162 testes)
 python3 -m pytest -v
 
 # Por nível
-python3 -m pytest tests/unit/ -v
-python3 -m pytest tests/integration/ -v
-python3 -m pytest tests/contract/ -v
-python3 -m pytest tests/regression/ -v
+python3 -m pytest tests/unit/ -v          # 56 testes
+python3 -m pytest tests/integration/ -v     # 13 testes
+python3 -m pytest tests/contract/ -v      # 26 testes
+python3 -m pytest tests/regression/ -v    # 23 testes
+python3 -m pytest tests/e2e/ -v           # 38 testes (17 e2e + 21 funcional)
 
-# E2E (Qt offscreen)
-QT_QPA_PLATFORM=offscreen python3 -m pytest tests/e2e/ -v
+# Validação completa contra rclone real + Google Drive
+# Requer: rclone no PATH com ao menos 1 remoto configurado
+QT_QPA_PLATFORM=offscreen python3 -m pytest tests/validation/ -v
 ```
 
 ## Estrutura
@@ -92,11 +94,14 @@ rclone_gui/
 └── resources/backends.json  # Catálogo de 22 backends
 
 tests/
-├── unit/       # 53 testes — models, DB mockado, service mockado
-├── integration/ # 13 testes — JobService + DB + scheduler
-├── contract/   # 26 testes — formato I/O rclone, schema DB, flags CLI
-├── regression/ # 23 testes — fields, DB, backends, edge cases
-└── e2e/        # 17 testes — app startup, navegação, fluxos completos
+├── unit/         # 56 testes — models, DB mockado, service mockado
+├── integration/  # 13 testes — JobService + DB + scheduler
+├── contract/     # 26 testes — formato I/O rclone, schema DB, flags CLI
+├── regression/   # 23 testes — fields, DB, backends, edge cases
+├── e2e/          # 38 testes — app startup, navegação, fluxos completos
+│   ├── test_e2e.py        # 17 testes de integração GUI
+│   └── test_functional.py # 21 testes funcionais end-to-end
+└── validation/   # 6 testes — integração real com rclone + Google Drive
 ```
 
 ## Solução de Problemas
@@ -119,7 +124,7 @@ sudo apt install libxcb-cursor0
 
 ## Status do Projeto
 
-**MVP implementado** (RF-01 a RF-15) — 132 testes automatizados passando.
+**MVP implementado** (RF-01 a RF-15) — 162 testes automatizados passando (incluindo 21 testes funcionais E2E e 6 testes de validação contra rclone real). Zero placeholders.
 
 | Status | Feature |
 |--------|---------|

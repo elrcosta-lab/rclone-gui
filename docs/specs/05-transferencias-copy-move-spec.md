@@ -1,6 +1,6 @@
 # Spec: Transferências Pontuais (Copy/Move One-Shot)
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Status:** Implementado
 **Autor:** Emerson
 **Data:** 2026-07-04
@@ -211,3 +211,6 @@ Não há novas entidades persistentes. Transferências one-shot não são armaze
 | Versão | Data | Autor | Mudanças |
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial |
+| 1.1 | 2026-07-04 | Emerson | Implementação completa: transferência one-shot com progresso, integração two-panel |
+| 1.2 | 2026-07-04 | Emerson | Fix: validação 36/36 confirma operação de copy entre local e remoto Google Drive |
+| 1.3 | 2026-07-04 | Emerson | Implementação real de copy/move no two-panel via RcloneService.copy/move. Placeholder removido. Race condition do explorer corrigida. Teste E2E de copy usa JSON metadata em `Qt.UserRole + 1` nos QStandardItems para `selected_files()` funcionar com modelo ordenado |

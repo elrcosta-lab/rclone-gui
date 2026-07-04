@@ -85,3 +85,5 @@ Cada spec segue o template `sdd-spec` com as 15 seções:
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial — 7 specs definidas, ordem de implementação e dependências mapeadas |
 | 1.1 | 2026-07-04 | Emerson | Todas as specs implementadas e testadas (132/132 testes) — atualização de status para Implementado |
+| 1.2 | 2026-07-04 | Emerson | Todas as specs validadas contra rclone real + Google Drive (36/36 testes). Fixes: OAuth QProcess, DB singleton, rcd POST, timeouts 90s |
+| 1.3 | 2026-07-04 | Emerson | 162 testes passando (21 funcionais E2E novos). Fix crítico Explorer: `threading.Thread` → `QThread`, `dict` → JSON em `Qt.UserRole+1`, QThread lifecycle seguro. Placeholders removidos em copy/move e job execution |

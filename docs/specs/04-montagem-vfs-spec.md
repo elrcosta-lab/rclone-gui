@@ -1,6 +1,6 @@
 # Spec: Montagem VFS (Virtual File System)
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Status:** Implementado
 **Autor:** Emerson
 **Data:** 2026-07-04
@@ -299,3 +299,5 @@ Sim — criar tabela `mount_configs` na primeira inicialização.
 | Versão | Data | Autor | Mudanças |
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial |
+| 1.1 | 2026-07-04 | Emerson | Implementação completa: mount/desmontar via subprocess, diálogo de configuração, cache VFS, persistência mount_configs no SQLite |
+| 1.2 | 2026-07-04 | Emerson | Fix: guard `conn is None` no PreferencesDialog. Validação 36/36 confirma mount CRUD |

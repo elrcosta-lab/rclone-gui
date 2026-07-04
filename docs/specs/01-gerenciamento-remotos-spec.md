@@ -1,6 +1,6 @@
 # Spec: Gerenciamento de Remotos (Config de Backends)
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Status:** Implementado
 **Autor:** Emerson
 **Data:** 2026-07-04
@@ -300,3 +300,5 @@ Não se aplica — os dados vivem no `rclone.conf`, que é gerenciado pelo próp
 | Versão | Data | Autor | Mudanças |
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial |
+| 1.1 | 2026-07-04 | Emerson | Implementação completa: wizard de remotos, OAuth delegado via QProcess, listagem remotos com quota, catálogo de 22 backends. Testes unit/contract/e2e verificando fluxos de OAuth |
+| 1.2 | 2026-07-04 | Emerson | Fix: OAuth migrado de subprocess.Popen para QProcess com sinais (não bloqueia UI). Token extraído de output misto NOTICE+JSON. Browser não abre aba duplicada. Validação 36/36 contra rclone real |

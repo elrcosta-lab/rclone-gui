@@ -1,7 +1,7 @@
 # PRD — Rclone GUI
 
 > **Status:** Implementado (MVP)
-> **Versão:** 1.1
+> **Versão:** 1.5
 > **Última atualização:** 2026-07-04
 > **Responsável:** Emerson
 
@@ -222,4 +222,7 @@ O seguinte está explicitamente **fora** do escopo do MVP:
 |--------|------|-------|-----------|
 | 1.0 | 2026-07-04 | Emerson | Versão inicial — MVP definido com 15 requisitos funcionais Core, stack PySide6/Qt, Linux-only, inspirado Google Drive for desktop |
 | 1.1 | 2026-07-04 | Emerson | MVP implementado (RF-01 a RF-15) + 5 níveis de testes (132/132 passando). README, specs e PRD atualizados para refletir estado implementado |
-| 1.2 | 2026-07-04 | Emerson | Fix: wizard de OAuth migrado de subprocess.Popen para QProcess com sinais + QDesktopServices. README expandido com seção de Troubleshooting e Status. Pendente: config rclone.conf com permissão incorreta pode bloquear `rclone authorize` |
+| 1.2 | 2026-07-04 | Emerson | Fix: wizard de OAuth migrado de subprocess.Popen para QProcess com sinais. README expandido com Troubleshooting e Status. Pendente: permissão rclone.conf pode bloquear `rclone authorize` |
+| 1.3 | 2026-07-04 | Emerson | Validação completa contra rclone real + Google Drive (36/36 passando). Fix: `about` timeout 15→90s configurável. Fix: DB singleton isolation (closeEvent não mais fecha conn). Fix: rcd endpoint GET→POST. `about()` aceita `timeout` param. `notification.py` adiciona `setup_autostart`/`remove_autostart`. `preferences.py` guard `conn is None`. Build-backend corrigido para `setuptools.build_meta` |
+| 1.4 | 2026-07-04 | Emerson | Remoção de todos os placeholders: transferência copy/move real no two-panel (RcloneService.copy/move), execução real de jobs via JobService.execute_job, edição de remotos via config_show/config_update. Fix: QFileSystemModel.refresh() inexistente no Qt6 → setRootPath. Fix: race condition no explorer (blockSignals + guard _is_local). 132/132 testes + 36/36 validação passando |
+| 1.5 | 2026-07-04 | Emerson | Fix crítico: Explorer — `threading.Thread` → `QThread` + `moveToThread` worker pattern. Fix: `dict` em `QVariant` (Qt.UserRole+1) → JSON serializado. Fix: `_items_by_row` removido, navegação via `index.data()` independente de sort order. Fix: QThread lifecycle (shutdown/closeEvent) evita crash ao fechar app. 162 testes passando (21 funcionais E2E novos). Teste de copy E2E usa JSON metadata real nos QStandardItems |

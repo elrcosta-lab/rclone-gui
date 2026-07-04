@@ -320,6 +320,35 @@ class TestRcloneServiceUnit:
         ok, _ = svc.moveto("gdrive:old", "gdrive:new")
         assert ok is True
 
+    def test_copy_success(self, mock_subprocess_run):
+        from rclone_gui.services.rclone_service import RcloneService
+        mock_subprocess_run.return_value.returncode = 0
+        svc = RcloneService()
+        ok, msg = svc.copy("/tmp/src", "gdrive:dst")
+        assert ok is True
+        assert msg == ""
+        args = mock_subprocess_run.call_args[0][0]
+        assert "copy" in args
+
+    def test_copy_failure(self, mock_subprocess_run):
+        from rclone_gui.services.rclone_service import RcloneService
+        mock_subprocess_run.return_value.returncode = 1
+        mock_subprocess_run.return_value.stderr = "quota exceeded"
+        svc = RcloneService()
+        ok, msg = svc.copy("/tmp/src", "gdrive:dst")
+        assert ok is False
+        assert "quota" in msg.lower()
+
+    def test_move_success(self, mock_subprocess_run):
+        from rclone_gui.services.rclone_service import RcloneService
+        mock_subprocess_run.return_value.returncode = 0
+        svc = RcloneService()
+        ok, msg = svc.move("/tmp/src", "gdrive:dst")
+        assert ok is True
+        assert msg == ""
+        args = mock_subprocess_run.call_args[0][0]
+        assert "move" in args
+
     def test_check_version_found(self, mock_subprocess_run):
         from rclone_gui.services.rclone_service import RcloneService
         mock_subprocess_run.return_value.returncode = 0

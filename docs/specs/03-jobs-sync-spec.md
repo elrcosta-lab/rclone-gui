@@ -1,6 +1,6 @@
 # Spec: Jobs de Sincronização
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Status:** Implementado
 **Autor:** Emerson
 **Data:** 2026-07-04
@@ -329,3 +329,6 @@ Sim — criar tabelas `sync_jobs`, `job_history`, `scheduler_state` na primeira 
 | Versão | Data | Autor | Mudanças |
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial |
+| 1.1 | 2026-07-04 | Emerson | Implementação completa: CRUD de jobs, scheduler com croniter, histórico de execuções, flags e filtros, progresso via subprocess |
+| 1.2 | 2026-07-04 | Emerson | Fix: DB singleton isolation em testes. Validação 36/36 confirma CRUD jobs, histórico, agendamento |
+| 1.3 | 2026-07-04 | Emerson | Execução real de jobs via JobService.execute_job + subprocess. Dry-run funcional. Placeholder removido |

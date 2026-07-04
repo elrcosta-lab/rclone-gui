@@ -1,6 +1,6 @@
 # Spec: Explorador de Arquivos (Two-Panel Browser)
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Status:** Implementado
 **Autor:** Emerson
 **Data:** 2026-07-04
@@ -283,6 +283,9 @@ Sim — criar tabela `directory_cache` no SQLite na primeira inicialização. Mi
 | Tree sidebar com lazy loading em vez de pré-carregar árvore inteira | (1) Pré-carregar via `rclone tree --json`, (2) Sem tree sidebar | Pré-carregar árvore inteira é inviável para backends com milhares de pastas (pode levar minutos). Lazy loading carrega apenas o necessário |
 | Navegação local usa `QFileSystemModel` nativo do Qt em vez de listar via rclone | (1) Usar rclone também para local | QFileSystemModel é nativo, performático, e já integrado com ícones e operações do SO. Usar rclone para local seria redundante e mais lento |
 | Renomeação usa `rclone moveto` (server-side move) | (1) `rclone copyto` + delete | `moveto` é atômico e usa server-side copy quando disponível (muito mais rápido). Fallback automático do rclone para copy+delete quando backend não suporta server-side move |
+| `threading.Thread` → `QThread` + `moveToThread` worker pattern | (1) `threading.Thread` com signals, (2) `QProcess` assíncrono | PySide6 signals emitidos de `threading.Thread` são **silenciosamente descartados** — a callback `_on_listing_ready` nunca era chamada. `QThread` com event loop Qt garante entrega de signals. Worker `_LsWorker` herda `QObject`, é movido para a thread via `moveToThread()` |
+| `dict` → JSON string em `Qt.UserRole + 1` | (1) `dict` direto em `setData()`, (2) `_items_by_row` array paralelo | `QVariant` não converte Python `dict` de forma segura para roles customizadas — causa segfault quando o view ordena itens ou `index.data()` é chamado. JSON serializado (`json.dumps`/`json.loads`) é seguro para `QVariant`. `_items_by_row` array paralelo quebra quando o QTreeView reordena alfabeticamente — `index.data(Qt.UserRole + 1)` é independente da ordem visual |
+| `setSortingEnabled(False)` antes de `setModel()` | (1) Apenas `setSortingEnabled(True)` | Evita que o QTreeView re-ordene pelo sort column do modelo *anterior* imediatamente após `setModel()`, o que corrompe a navegação duplo-clique antes que o usuário interaja |
 
 ---
 
@@ -303,3 +306,6 @@ Sim — criar tabela `directory_cache` no SQLite na primeira inicialização. Mi
 | Versão | Data | Autor | Mudanças |
 |--------|------|-------|---------|
 | 1.0 | 2026-07-04 | Emerson | Criação inicial |
+| 1.1 | 2026-07-04 | Emerson | Implementação completa: two-panel browser, seleção de remotos, navegação local/remota, breadcrumb, operações de arquivo |
+| 1.2 | 2026-07-04 | Emerson | Fix: validação 36/36 confirma navegação, path picker, set_remotes populando combos |
+| 1.3 | 2026-07-04 | Emerson | Fix crítico: `threading.Thread` → `QThread` + `moveToThread` worker pattern. `dict` em `QVariant` → JSON serializado em `Qt.UserRole + 1`. `_items_by_row` removido. `setSortingEnabled(False)` antes de `setModel()`. `closeEvent` chama `shutdown()` no `RemoteFileModel` para lifecycle seguro do QThread |

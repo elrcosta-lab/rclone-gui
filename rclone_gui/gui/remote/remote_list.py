@@ -6,7 +6,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QListWidget, QListWidgetItem, QToolButton, QStatusBar,
-    QSplitter, QMessageBox,
+    QSplitter, QMessageBox, QDialog, QFormLayout, QLineEdit,
+    QTextEdit, QDialogButtonBox,
 )
 
 from ...services.rclone_service import RcloneService
@@ -82,9 +83,45 @@ class RemoteListWidget(QWidget):
         if not item:
             return
         name = item.data(Qt.UserRole)
-        QMessageBox.information(self, "Editar Remoto",
-                                f"Edição do remoto '{name}' será implementada em breve.\n"
-                                "Por enquanto, edite via terminal: rclone config")
+        cfg = self.rclone.config_show(name)
+        if not cfg:
+            QMessageBox.critical(self, "Erro",
+                                 f"Não foi possível ler a configuração do remoto '{name}'.")
+            return
+        dlg = QDialog(self)
+        dlg.setWindowTitle(f"Editar Remoto: {name}")
+        layout = QFormLayout(dlg)
+        type_edit = QLineEdit(cfg.get("type", ""))
+        type_edit.setReadOnly(True)
+        layout.addRow("Tipo:", type_edit)
+        params_edit = QTextEdit()
+        params = []
+        for k, v in cfg.items():
+            if k != "type":
+                params.append(f"{k}={v}")
+        params_edit.setPlainText("\n".join(params))
+        params_edit.setMinimumHeight(120)
+        layout.addRow("Parâmetros (um por linha):", params_edit)
+        btns = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        btns.accepted.connect(dlg.accept)
+        btns.rejected.connect(dlg.reject)
+        layout.addWidget(btns)
+        if dlg.exec():
+            ok_count = 0
+            for line in params_edit.toPlainText().strip().split("\n"):
+                line = line.strip()
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    ok, _ = self.rclone.config_update(
+                        name, **{k.strip(): v.strip()}
+                    )
+                    if ok:
+                        ok_count += 1
+            QMessageBox.information(
+                self, "Salvar",
+                f"{ok_count} parâmetro(s) atualizado(s) para '{name}'."
+            )
+            self.refresh()
 
     def _delete_remote(self):
         item = self._list.currentItem()
