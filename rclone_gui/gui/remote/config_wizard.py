@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 from typing import Optional
 
-from PySide6.QtCore import Qt, QProcess
+from PySide6.QtCore import Qt, QProcess, QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QComboBox, QPushButton, QFormLayout, QGroupBox,
@@ -23,6 +25,8 @@ class ConfigWizard(QDialog):
         self._selected_backend = None
         self._auth_process: Optional[QProcess] = None
         self._auth_output = ""
+        self._auth_url = ""
+        self._auth_token = None
         self._setup_ui()
 
     def _setup_ui(self):
@@ -85,17 +89,28 @@ class ConfigWizard(QDialog):
     def _build_auth_page(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
-        self._auth_label = QLabel("Clique em 'Autorizar' para conectar sua conta.")
-        self._auth_label.setAlignment(Qt.AlignCenter)
+
+        self._auth_label = QLabel(
+            "Passo 1: Clique em 'Iniciar Autorização' abaixo.\n"
+            "Passo 2: O navegador abrirá com a tela de login do Google.\n"
+            "Passo 3: Faça login e autorize o acesso.\n"
+            "Passo 4: Aguarde esta janela atualizar automaticamente."
+        )
+        self._auth_label.setAlignment(Qt.AlignLeft)
         self._auth_label.setWordWrap(True)
+
+        self._auth_btn = QPushButton("Iniciar Autorização")
+        self._auth_btn.clicked.connect(self._start_auth)
+
+        self._open_browser_btn = QPushButton("Abrir Navegador Manualmente")
+        self._open_browser_btn.clicked.connect(self._open_browser)
+        self._open_browser_btn.hide()
 
         self._auth_url_label = QLabel("")
         self._auth_url_label.setWordWrap(True)
         self._auth_url_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self._auth_url_label.setStyleSheet("color: #89b4fa; font-size: 11px;")
         self._auth_url_label.hide()
-
-        self._auth_btn = QPushButton("Autorizar via Navegador")
-        self._auth_btn.clicked.connect(self._start_auth)
 
         self._auth_progress = QProgressBar()
         self._auth_progress.setRange(0, 0)
@@ -103,10 +118,12 @@ class ConfigWizard(QDialog):
 
         self._auth_status = QLabel("")
         self._auth_status.setAlignment(Qt.AlignCenter)
+        self._auth_status.setStyleSheet("font-weight: bold;")
 
         layout.addWidget(self._auth_label)
-        layout.addWidget(self._auth_url_label)
         layout.addWidget(self._auth_btn)
+        layout.addWidget(self._open_browser_btn)
+        layout.addWidget(self._auth_url_label)
         layout.addWidget(self._auth_progress)
         layout.addWidget(self._auth_status)
         layout.addStretch()
@@ -159,10 +176,11 @@ class ConfigWizard(QDialog):
         provider = self._selected_backend.oauth_provider or self._selected_backend.type
 
         self._auth_btn.setEnabled(False)
-        self._auth_btn.setText("Autorizando...")
+        self._auth_btn.setText("Aguardando rclone...")
         self._auth_progress.show()
         self._auth_status.setText("Iniciando rclone authorize...")
         self._auth_output = ""
+        self._auth_url = ""
 
         self._auth_process = QProcess(self)
         self._auth_process.setProgram("rclone")
@@ -179,18 +197,34 @@ class ConfigWizard(QDialog):
         self._auth_output += data
 
         urls = re.findall(r'https?://[^\s<>"]+', data)
-        if urls:
-            self._auth_url_label.setText(f"URL: {urls[0]}")
+        if urls and not self._auth_url:
+            self._auth_url = urls[0]
+            self._auth_url_label.setText(f"URL: {self._auth_url}")
             self._auth_url_label.show()
-            self._auth_status.setText("Abrindo navegador... Se não abrir, copie o URL acima.")
+            self._open_browser_btn.show()
+            self._auth_status.setText(
+                "Navegador deve abrir automaticamente.\n"
+                "Se não abrir, clique em 'Abrir Navegador Manualmente'."
+            )
+            self._auth_progress.hide()
+            self._auth_btn.setText("Aguardando autorização...")
+            try:
+                QDesktopServices.openUrl(QUrl(self._auth_url))
+            except Exception:
+                pass
 
         if "token" in self._auth_output.lower() or "response" in self._auth_output.lower():
             self._auth_status.setText("Autorização recebida! Salvando...")
 
+    def _open_browser(self):
+        if self._auth_url:
+            QDesktopServices.openUrl(QUrl(self._auth_url))
+
     def _on_auth_finished(self, exit_code: int, _exit_status):
         self._auth_progress.hide()
         self._auth_btn.setEnabled(True)
-        self._auth_btn.setText("Autorizar via Navegador")
+        self._auth_btn.setText("Iniciar Autorização")
+        self._open_browser_btn.hide()
 
         if exit_code == 0 and self._auth_output.strip():
             try:
@@ -215,11 +249,8 @@ class ConfigWizard(QDialog):
 
     def _update_buttons(self):
         idx = self._stack.currentIndex()
-        is_auth_page = idx == 2
-        is_search_page = idx == 0
-
         self._prev_btn.setVisible(idx > 0)
-        self._next_btn.setVisible(is_search_page)
+        self._next_btn.setVisible(idx == 0)
         self._save_btn.setVisible(idx == 1)
 
     def _save(self):
@@ -231,7 +262,7 @@ class ConfigWizard(QDialog):
             return
 
         if self._selected_backend.requires_oauth:
-            if not hasattr(self, '_auth_token') or not self._auth_token:
+            if not self._auth_token:
                 QMessageBox.warning(self, "Erro", "Autorize a conta primeiro.")
                 return
 
