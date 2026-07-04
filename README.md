@@ -30,6 +30,7 @@ Inspirado no Google Drive for desktop, roda como daemon de background com ícone
 - **rclone ≥ 1.60** no PATH ([instalação oficial](https://rclone.org/install/))
 - **Python 3.10+**
 - **FUSE** (para montagem de remotos): `sudo apt install fuse3` (Debian/Ubuntu)
+- **libxcb-cursor0** (Qt 6.5+): `sudo apt install libxcb-cursor0`
 
 ## Instalação e Uso
 
@@ -97,6 +98,46 @@ tests/
 ├── regression/ # 23 testes — fields, DB, backends, edge cases
 └── e2e/        # 17 testes — app startup, navegação, fluxos completos
 ```
+
+## Solução de Problemas
+
+### `rclone authorize` falha com "permission denied"
+
+O arquivo de configuração do rclone (`~/.config/rclone/rclone.conf`) precisa ser legível pelo seu usuário:
+
+```bash
+sudo chown $USER:$USER ~/.config/rclone/rclone.conf
+```
+
+### `qt.qpa.plugin: Could not load the Qt platform plugin "xcb"`
+
+Instale a dependência ausente:
+
+```bash
+sudo apt install libxcb-cursor0
+```
+
+## Status do Projeto
+
+**MVP implementado** (RF-01 a RF-15) — 132 testes automatizados passando.
+
+| Status | Feature |
+|--------|---------|
+| ✅ | Wizard de configuração de remotos (OAuth delegado via QProcess) |
+| ✅ | Listagem e gerenciamento de remotos |
+| ✅ | Explorador de arquivos two-panel (local + remoto) |
+| ✅ | Jobs de sincronização (sync, copy, move, bisync) |
+| ✅ | Agendamento de jobs (scheduler com croniter) |
+| ✅ | Execução com progresso em tempo real |
+| ✅ | Histórico de execuções |
+| ✅ | Montagem VFS (FUSE) |
+| ✅ | Transferências pontuais (copy/move one-shot) |
+| ✅ | Verificação de integridade (check + hash) |
+| ✅ | Daemon de background com system tray |
+| ✅ | Autostart no login |
+| ✅ | Notificações do sistema (D-Bus) |
+| ✅ | Janela de preferências |
+| ✅ | Suporte a filtros |
 
 ## Licença
 

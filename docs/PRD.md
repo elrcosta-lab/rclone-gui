@@ -222,3 +222,4 @@ O seguinte está explicitamente **fora** do escopo do MVP:
 |--------|------|-------|-----------|
 | 1.0 | 2026-07-04 | Emerson | Versão inicial — MVP definido com 15 requisitos funcionais Core, stack PySide6/Qt, Linux-only, inspirado Google Drive for desktop |
 | 1.1 | 2026-07-04 | Emerson | MVP implementado (RF-01 a RF-15) + 5 níveis de testes (132/132 passando). README, specs e PRD atualizados para refletir estado implementado |
+| 1.2 | 2026-07-04 | Emerson | Fix: wizard de OAuth migrado de subprocess.Popen para QProcess com sinais + QDesktopServices. README expandido com seção de Troubleshooting e Status. Pendente: config rclone.conf com permissão incorreta pode bloquear `rclone authorize` |
