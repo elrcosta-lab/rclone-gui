@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "rclone-gui"
+version = "0.1.0"
+description = "Interface gráfica para rclone — estilo Google Drive for desktop"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "PySide6>=6.5",
+    "croniter>=1.3",
+]
+
+[project.scripts]
+rclone-gui = "rclone_gui.__main__:main"
+rclone-gui-daemon = "rclone_gui.daemon.daemon_app:main"
+
+[tool.setuptools.packages.find]
+include = ["rclone_gui*", "tests*"]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.4",
+    "pytest-mock>=3.11",
+    "pytest-qt>=4.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+markers = [
+    "unit: Unit tests (models, isolated functions)",
+    "integration: Integration tests (service + db)",
+    "contract: Contract tests (rclone I/O format)",
+    "regression: Regression tests (behavior preservation)",
+    "e2e: End-to-end tests (full app workflows)",
+]
