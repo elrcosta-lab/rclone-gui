@@ -23,7 +23,7 @@ def _get_rclone_conf_path() -> Path:
     return Path.home() / ".config" / "rclone" / "rclone.conf"
 
 
-def _save_token_to_conf(remote_name: str, token_data: dict) -> bool:
+def _save_token_to_conf(remote_name: str, backend_type: str, token_data: dict) -> bool:
     conf_path = _get_rclone_conf_path()
     conf_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -35,7 +35,7 @@ def _save_token_to_conf(remote_name: str, token_data: dict) -> bool:
     if not config.has_section(section):
         config.add_section(section)
 
-    config.set(section, "type", "drive")
+    config.set(section, "type", backend_type)
     config.set(section, "token", json.dumps(token_data))
 
     with open(conf_path, "w") as f:
@@ -117,10 +117,8 @@ class ConfigWizard(QDialog):
         layout = QVBoxLayout(page)
 
         self._auth_label = QLabel(
-            "Passo 1: Clique em 'Iniciar Autorização' abaixo.\n"
-            "Passo 2: O navegador abrirá com a tela de login do Google.\n"
-            "Passo 3: Faça login e autorize o acesso.\n"
-            "Passo 4: Aguarde esta janela atualizar automaticamente."
+            "O rclone abrirá o navegador automaticamente.\n"
+            "Se não abrir, copie o URL abaixo e cole no navegador."
         )
         self._auth_label.setAlignment(Qt.AlignLeft)
         self._auth_label.setWordWrap(True)
@@ -128,7 +126,7 @@ class ConfigWizard(QDialog):
         self._auth_btn = QPushButton("Iniciar Autorização")
         self._auth_btn.clicked.connect(self._start_auth)
 
-        self._open_browser_btn = QPushButton("Abrir Navegador Manualmente")
+        self._open_browser_btn = QPushButton("Abrir URL no Navegador")
         self._open_browser_btn.clicked.connect(self._open_browser)
         self._open_browser_btn.hide()
 
@@ -230,16 +228,10 @@ class ConfigWizard(QDialog):
             self._open_browser_btn.show()
             self._auth_status.setText(
                 "Navegador deve abrir automaticamente.\n"
-                "Se não abrir, clique em 'Abrir Navegador Manualmente'."
+                "Se não abrir, clique em 'Abrir URL no Navegador'."
             )
             self._auth_progress.hide()
             self._auth_btn.setText("Aguardando autorização...")
-            try:
-                subprocess.Popen(["xdg-open", self._auth_url],
-                                 stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.DEVNULL)
-            except Exception:
-                pass
 
         if "token" in self._auth_output.lower() or "response" in self._auth_output.lower():
             self._auth_status.setText("Autorização recebida! Salvando...")
@@ -257,18 +249,28 @@ class ConfigWizard(QDialog):
         self._open_browser_btn.hide()
 
         if exit_code == 0 and self._auth_output.strip():
-            try:
-                token_data = json.loads(self._auth_output.strip())
+            token_data = self._extract_token_json(self._auth_output)
+            if token_data:
                 self._auth_status.setText("Autorização concluída com sucesso!")
                 self._auth_token = token_data
                 self._stack.setCurrentIndex(1)
                 self._update_buttons()
-            except json.JSONDecodeError:
-                self._auth_status.setText("Resposta inválida do rclone. Tente novamente.")
+            else:
+                self._auth_status.setText("Não foi possível extrair o token. Tente novamente.")
                 self._auth_token = None
         else:
             self._auth_status.setText("Autorização falhou ou foi cancelada.")
             self._auth_token = None
+
+    def _extract_token_json(self, output: str) -> Optional[dict]:
+        for line in output.split("\n"):
+            line = line.strip()
+            if line.startswith("{") and line.endswith("}"):
+                try:
+                    return json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+        return None
 
     def _on_cancel(self):
         if self._auth_process and self._auth_process.state() == QProcess.Running:
@@ -295,7 +297,7 @@ class ConfigWizard(QDialog):
             if not self._auth_token:
                 QMessageBox.warning(self, "Erro", "Autorize a conta primeiro.")
                 return
-            ok = _save_token_to_conf(name, self._auth_token)
+            ok = _save_token_to_conf(name, self._selected_backend.type, self._auth_token)
             if not ok:
                 QMessageBox.critical(self, "Erro", "Falha ao salvar token no rclone.conf")
                 return
