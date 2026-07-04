@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import configparser
+from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt, QProcess, QUrl
@@ -15,6 +17,30 @@ from PySide6.QtWidgets import (
 )
 
 from ...services.rclone_service import RcloneService
+
+
+def _get_rclone_conf_path() -> Path:
+    return Path.home() / ".config" / "rclone" / "rclone.conf"
+
+
+def _save_token_to_conf(remote_name: str, token_data: dict) -> bool:
+    conf_path = _get_rclone_conf_path()
+    conf_path.parent.mkdir(parents=True, exist_ok=True)
+
+    config = configparser.ConfigParser()
+    if conf_path.exists():
+        config.read(conf_path)
+
+    section = remote_name
+    if not config.has_section(section):
+        config.add_section(section)
+
+    config.set(section, "type", "drive")
+    config.set(section, "token", json.dumps(token_data))
+
+    with open(conf_path, "w") as f:
+        config.write(f)
+    return True
 
 
 class ConfigWizard(QDialog):
@@ -209,7 +235,9 @@ class ConfigWizard(QDialog):
             self._auth_progress.hide()
             self._auth_btn.setText("Aguardando autorização...")
             try:
-                QDesktopServices.openUrl(QUrl(self._auth_url))
+                subprocess.Popen(["xdg-open", self._auth_url],
+                                 stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL)
             except Exception:
                 pass
 
@@ -218,7 +246,9 @@ class ConfigWizard(QDialog):
 
     def _open_browser(self):
         if self._auth_url:
-            QDesktopServices.openUrl(QUrl(self._auth_url))
+            subprocess.Popen(["xdg-open", self._auth_url],
+                             stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL)
 
     def _on_auth_finished(self, exit_code: int, _exit_status):
         self._auth_progress.hide()
@@ -265,12 +295,17 @@ class ConfigWizard(QDialog):
             if not self._auth_token:
                 QMessageBox.warning(self, "Erro", "Autorize a conta primeiro.")
                 return
-
-        ok, msg = self.rclone.config_create(name, self._selected_backend.type)
-        if ok:
-            self.accept()
+            ok = _save_token_to_conf(name, self._auth_token)
+            if not ok:
+                QMessageBox.critical(self, "Erro", "Falha ao salvar token no rclone.conf")
+                return
         else:
-            QMessageBox.critical(self, "Erro ao salvar", msg)
+            ok, msg = self.rclone.config_create(name, self._selected_backend.type)
+            if not ok:
+                QMessageBox.critical(self, "Erro ao salvar", msg)
+                return
+
+        self.accept()
 
     def selected_name(self) -> str:
         return self._name_input.text().strip()
