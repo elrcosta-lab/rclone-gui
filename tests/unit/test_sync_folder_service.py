@@ -84,14 +84,16 @@ class TestSyncFolderService:
             ok, msg = service.sync_now(fid)
             assert ok
             mock_bisync.assert_called_once()
-            args, _ = mock_bisync.call_args
+            args, kwargs = mock_bisync.call_args
             assert args[0] == path
             assert args[1] == "gdrive:/"
+            assert kwargs.get("resync") is True, "primeira sync deve usar --resync"
 
-    def test_sync_now_updates_last_sync_at(self, temp_db, mocker):
+    def test_sync_now_first_uses_resync_second_does_not(self, temp_db, mocker):
         from rclone_gui.services.rclone_service import RcloneService
 
-        mocker.patch.object(RcloneService, "bisync", return_value=(True, ""))
+        mock_bisync = mocker.patch.object(RcloneService, "bisync",
+                                          return_value=(True, ""))
         with tempfile.TemporaryDirectory() as tmp:
             service = SyncFolderService(db=temp_db)
             path = os.path.join(tmp, "d")
@@ -100,3 +102,9 @@ class TestSyncFolderService:
             folders = service.get_all()
             assert folders[0].last_sync_at is not None
             assert folders[0].last_sync_status == "success"
+            _, kwargs1 = mock_bisync.call_args_list[0]
+            assert kwargs1.get("resync") is True
+
+            service.sync_now(fid)
+            _, kwargs2 = mock_bisync.call_args_list[1]
+            assert kwargs2.get("resync") is False

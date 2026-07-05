@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, QTimer, Signal
 
 from ..models.sync_folder import SyncFolderConfig
 from ..services.sync_folder_service import SyncFolderService
@@ -28,6 +28,9 @@ class _ManagedFolder(QObject):
 
     def start_watching(self):
         self._watcher.start()
+
+    def request_sync(self):
+        QTimer.singleShot(0, self._do_sync)
 
     def stop(self):
         self._watcher.stop()
@@ -77,4 +80,5 @@ class SyncFolderManager(QObject):
         mf = _ManagedFolder(cfg, self._service, self)
         mf.sync_completed.connect(lambda fid, st: self.sync_completed.emit(fid, st))
         mf.start_watching()
+        mf.request_sync()
         self._folders[cfg.id] = mf

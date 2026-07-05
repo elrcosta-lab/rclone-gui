@@ -59,6 +59,7 @@ class SyncFolderService:
         ok, msg = self.rclone.bisync(
             cfg.local_path, cfg.remote_path,
             conflict_resolution=cfg.conflict_resolution,
+            resync=(cfg.last_sync_at is None),
         )
         cfg.last_sync_at = now
         cfg.last_sync_status = "success" if ok else "failed"
