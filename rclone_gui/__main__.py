@@ -65,9 +65,10 @@ class RcloneGUI:
                 sync_folder_service=self.sync_folder_service,
                 tray=self.tray,
             )
-        self._window.setWindowState(
-            self._window.windowState() & ~self._window.windowState().Minimized
-        )
+        from PySide6.QtCore import Qt
+        state = self._window.windowState()
+        if state & Qt.WindowMinimized:
+            self._window.setWindowState(state & ~Qt.WindowMinimized)
         self._window.show()
         self._window.raise_()
         self._window.activateWindow()
