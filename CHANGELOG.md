@@ -10,6 +10,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Corrigido
 - **Sync folders não sincronizavam na primeira execução**: `sync_now()` não passava `--resync`, necessário quando diretório local está vazio e remoto populado. Agora passa `resync=True` automaticamente na primeira sincronização (`last_sync_at is None`).
 - **SyncFolderManager não disparava sync inicial**: ao iniciar uma pasta monitorada, o manager agora chama `request_sync()` via `QTimer.singleShot(0)` para sincronizar imediatamente, sem depender do primeiro tick do poller (5 min).
+- **SyncFolderList não carregava dados ao iniciar**: `refresh()` não era chamado no `__init__`, então o painel ficava vazio até o usuário adicionar/editar/remover. Configurações existentes no banco não apareciam na GUI.
 
 ### Adicionado
 - **RF-16 — Pastas de Sincronização (Sync Folders)**: pastas locais sincronizadas bidirecionalmente com remotos via `rclone bisync`

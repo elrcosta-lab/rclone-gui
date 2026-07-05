@@ -72,6 +72,8 @@ class SyncFolderList(QWidget):
         self._status_bar = QStatusBar()
         layout.addWidget(self._status_bar)
 
+        self.refresh()
+
     def refresh(self):
         self._folders = self.sync_folder_service.get_all()
         self._list.clear()
