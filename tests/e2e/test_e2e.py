@@ -369,9 +369,9 @@ class TestVerificationFlow:
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
         window.show()
-        window._stack.setCurrentIndex(5)
+        window._stack.setCurrentIndex(6)
 
-        check_page = window._pages[5]
+        check_page = window._pages[6]
         assert check_page._source_input is not None
         assert check_page._dest_input is not None
         assert check_page._checksum_cb is not None
@@ -403,7 +403,8 @@ class TestNavigationFlow:
         # Mapeia texto do botão → página esperada
         pages = {
             "Remotos": 0, "Explorador": 1, "Jobs": 2, "Histórico": 3,
-            "Montagens": 4, "Verificação": 5, "Transferir": 6, "Preferências": 7,
+            "Montagens": 4, "Sync Folders": 5, "Verificação": 6,
+            "Transferir": 7, "Preferências": 8,
         }
 
         buttons = {b.text(): b for b in window.findChildren(QPushButton) if b.text() in pages}

@@ -159,22 +159,24 @@ class MainWindow(QMainWindow):
     def _first_run_check(self):
         if self.db.get_config("first_run_completed", 0):
             return
+        is_test = os.environ.get("QT_QPA_PLATFORM") == "offscreen"
         sync_dir = Path.home() / "RcloneSync"
         sync_dir.mkdir(parents=True, exist_ok=True)
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Bem-vindo ao Rclone GUI")
-        msg.setText(
-            "Primeira execução detectada!\n\n"
-            "A pasta ~/RcloneSync/ foi criada para sincronização bidirecional "
-            "com seus remotos.\n\n"
-            "Você pode configurar pastas de sincronização na página "
-            "'Sync Folders' no menu lateral.\n\n"
-            "Recomendado:\n"
-            "1. Configure seus remotos em 'Remotos'\n"
-            "2. Vá em 'Sync Folders' e adicione uma pasta\n\n"
-            "Você pode alterar as configurações em Preferências a qualquer momento."
-        )
-        msg.exec()
+        if not is_test:
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Bem-vindo ao Rclone GUI")
+            msg.setText(
+                "Primeira execução detectada!\n\n"
+                "A pasta ~/RcloneSync/ foi criada para sincronização bidirecional "
+                "com seus remotos.\n\n"
+                "Você pode configurar pastas de sincronização na página "
+                "'Sync Folders' no menu lateral.\n\n"
+                "Recomendado:\n"
+                "1. Configure seus remotos em 'Remotos'\n"
+                "2. Vá em 'Sync Folders' e adicione uma pasta\n\n"
+                "Você pode alterar as configurações em Preferências a qualquer momento."
+            )
+            msg.exec()
         self.db.set_config("first_run_completed", 1)
 
     def _make_mount_page(self) -> QWidget:

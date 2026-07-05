@@ -574,8 +574,8 @@ class TestVerificationFlow:
 
     def test_check_tool_all_fields_present(self, main_window):
         """Todos os campos da ferramenta de check estão presentes."""
-        main_window._stack.setCurrentIndex(5)
-        check_page = main_window._pages[5]
+        main_window._stack.setCurrentIndex(6)
+        check_page = main_window._pages[6]
 
         assert check_page._source_input is not None
         assert check_page._dest_input is not None
