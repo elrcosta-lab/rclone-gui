@@ -154,11 +154,12 @@ class RcloneService:
         return False, r.stderr.strip() or r.stdout.strip()
 
     def bisync(self, source: str, destination: str,
-               conflict_resolution: str = "newer",
+               conflict_resolution: str = "",
                resync: bool = False,
                **flags) -> tuple[bool, str]:
-        args = ["bisync", source, destination,
-                "--conflict-resolve", conflict_resolution]
+        args = ["bisync", source, destination]
+        if conflict_resolution:
+            args.extend(["--conflict-resolve", conflict_resolution])
         if resync:
             args.append("--resync")
         for k, v in flags.items():

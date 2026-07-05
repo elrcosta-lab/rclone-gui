@@ -13,7 +13,7 @@ class TestSyncFolderModel:
     def test_sync_folder_defaults(self):
         cfg = SyncFolderConfig()
         assert cfg.sync_mode == "bisync"
-        assert cfg.conflict_resolution == "newer"
+        assert cfg.conflict_resolution == ""
         assert cfg.polling_interval == 300
         assert cfg.debounce_seconds == 5
         assert cfg.enabled is True

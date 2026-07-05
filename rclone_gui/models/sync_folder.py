@@ -11,7 +11,7 @@ class SyncFolderConfig:
     local_path: str = ""
     remote_path: str = ""
     sync_mode: str = "bisync"
-    conflict_resolution: str = "newer"
+    conflict_resolution: str = ""
     polling_interval: int = 300
     debounce_seconds: int = 5
     enabled: bool = True
