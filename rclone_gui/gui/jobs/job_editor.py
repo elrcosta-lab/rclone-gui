@@ -81,6 +81,31 @@ class JobEditor(QDialog):
         self._retries_spin.setValue(self._job.flags.get("retries", 3))
         adv_layout.addRow("Retries:", self._retries_spin)
 
+        bisync_group = QGroupBox("Bisync")
+        bisync_layout = QFormLayout(bisync_group)
+        self._resync_cb = QCheckBox()
+        self._resync_cb.setChecked(self._job.flags.get("resync", False))
+        bisync_layout.addRow("--resync:", self._resync_cb)
+
+        self._conflict_combo = QComboBox()
+        self._conflict_combo.addItems(["newer", "path", "local", "remote"])
+        current = self._job.flags.get("conflict_resolve", "newer")
+        idx = self._conflict_combo.findText(current)
+        if idx >= 0:
+            self._conflict_combo.setCurrentIndex(idx)
+        bisync_layout.addRow("--conflict-resolve:", self._conflict_combo)
+
+        self._workgroup_cb = QCheckBox()
+        self._workgroup_cb.setChecked(self._job.flags.get("workgroup", False))
+        bisync_layout.addRow("--workgroup:", self._workgroup_cb)
+
+        self._resync_cb.setEnabled(self._job.job_type == "bisync")
+        self._conflict_combo.setEnabled(self._job.job_type == "bisync")
+        self._workgroup_cb.setEnabled(self._job.job_type == "bisync")
+        adv_layout.addRow(bisync_group)
+
+        self._type_combo.currentIndexChanged.connect(self._on_type_changed)
+
         # Schedule
         sched_group = QGroupBox("Agendamento")
         sched_layout = QFormLayout(sched_group)
@@ -115,6 +140,12 @@ class JobEditor(QDialog):
         btns.rejected.connect(self.reject)
         layout.addWidget(btns)
 
+    def _on_type_changed(self, idx: int):
+        is_bisync = self._type_combo.itemData(idx) == "bisync"
+        self._resync_cb.setEnabled(is_bisync)
+        self._conflict_combo.setEnabled(is_bisync)
+        self._workgroup_cb.setEnabled(is_bisync)
+
     def _save(self):
         self._job.name = self._name_input.text().strip()
         self._job.job_type = self._type_combo.currentData()
@@ -127,6 +158,9 @@ class JobEditor(QDialog):
             "transfers": self._transfers_spin.value(),
             "checkers": self._checkers_spin.value(),
             "retries": self._retries_spin.value(),
+            "resync": self._resync_cb.isChecked(),
+            "conflict_resolve": self._conflict_combo.currentText(),
+            "workgroup": self._workgroup_cb.isChecked(),
         }
         self._job.schedule_enabled = self._enabled_cb.isChecked()
         self._job.schedule_type = self._schedule_combo.currentData()

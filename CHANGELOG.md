@@ -5,6 +5,30 @@ Todas as mudanças notáveis deste projeto serão documentadas aqui.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-07-05
+
+### Adicionado
+- **RF-16 — Pastas de Sincronização (Sync Folders)**: pastas locais sincronizadas bidirecionalmente com remotos via `rclone bisync`
+- `SyncFolderConfig` model + `sync_folders` table no SQLite (migração v2) com CRUD completo
+- `SyncFolderService`: register, get_all, get_enabled, set_enabled, unregister, sync_now
+- `RcloneService.bisync()` — novo método com `--conflict-resolve`, `--resync` e flags arbitrárias
+- `SyncFolderWatcher`: detecção de alterações locais via inotify (watchdog) com debounce e ponte QSignal (cross-thread)
+- `SyncFolderPoller`: polling periódico via QTimer com suporte a suppress (debounce sobrepõe polling)
+- `SyncFolderManager`: orquestrador `_ManagedFolder` (watcher + poller + sync) integrado ao DaemonApp
+- `DaemonApp` migrado para `QCoreApplication` + `QTimer` heartbeat (substitui blocking loop)
+- GUI `SyncFolderList` + `SyncFolderEditor` (dialog): página no sidebar com Add/Edit/Remove/Sync Now
+- Tray submenu "Sync Folders" com status e atalho para sincronizar
+- First-run wizard: cria `~/RcloneSync/` e exibe boas-vindas
+- Bisync flags no JobEditor: `--resync`, `--conflict-resolve`, `--workgroup` (ativo apenas para tipo bisync)
+- 22 novos testes unitários (model, service, watcher, poller, manager)
+
+### Alterado
+- `pyproject.toml`: dependência `watchdog>=3.0` adicionada
+- `rclone_gui/daemon/daemon_app.py`: blocking loop substituído por QCoreApplication + QTimer heartbeat; integra SyncFolderManager
+- `rclone_gui/gui/main_window.py`: sidebar ganha página "Sync Folders" (índice 5, desloca Verificação→6, Transferir→7, Preferências→8)
+- `rclone_gui/daemon/tray_manager.py`: novo signal `sync_folder_triggered`, submenu Sync Folders com status
+- 86 unit tests passando (anteriormente: 56 + 4 sync + 26 watcher/poller/manager)
+
 ## [0.2.0] — 2026-07-04
 
 ### Adicionado

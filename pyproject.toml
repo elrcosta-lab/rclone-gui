@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rclone-gui"
-version = "0.2.0"
+version = "0.3.0"
 description = "Interface gráfica para rclone — gerencie remotos, sincronize arquivos, monte drives VFS e verifique integridade sem terminal."
 requires-python = ">=3.10"
 license = {text = "MIT"}

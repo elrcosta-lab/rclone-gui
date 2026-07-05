@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt, QTimer
@@ -11,6 +13,7 @@ from PySide6.QtWidgets import (
 from ..db.database import Database
 from ..services.rclone_service import RcloneService
 from ..services.job_service import JobService
+from ..services.sync_folder_service import SyncFolderService
 from ..daemon.tray_manager import TrayManager
 
 from .remote.remote_list import RemoteListWidget
@@ -21,6 +24,7 @@ from .mount.mount_dialog import MountDialog
 from .transfer.transfer_dialog import TransferDialog
 from .verification.check_tool import CheckToolWidget
 from .settings.preferences import PreferencesDialog
+from .sync_folders.sync_folder_list import SyncFolderList
 from .common.styles import apply_theme
 
 
@@ -30,11 +34,13 @@ class MainWindow(QMainWindow):
         self.db = Database.get_instance()
         self.rclone = RcloneService()
         self.job_service = JobService(self.db)
+        self.sync_folder_service = SyncFolderService(self.db)
         self.tray = TrayManager(self)
 
         self._setup_ui()
         self._connect_signals()
         self._check_rclone()
+        self._first_run_check()
 
     def _setup_ui(self):
         self.setWindowTitle("Rclone GUI")
@@ -58,10 +64,11 @@ class MainWindow(QMainWindow):
         sb_layout.addWidget(self._make_sidebar_btn("Jobs", 2))
         sb_layout.addWidget(self._make_sidebar_btn("Histórico", 3))
         sb_layout.addWidget(self._make_sidebar_btn("Montagens", 4))
-        sb_layout.addWidget(self._make_sidebar_btn("Verificação", 5))
-        sb_layout.addWidget(self._make_sidebar_btn("Transferir", 6))
+        sb_layout.addWidget(self._make_sidebar_btn("Sync Folders", 5))
+        sb_layout.addWidget(self._make_sidebar_btn("Verificação", 6))
+        sb_layout.addWidget(self._make_sidebar_btn("Transferir", 7))
         sb_layout.addStretch()
-        sb_layout.addWidget(self._make_sidebar_btn("Preferências", 7))
+        sb_layout.addWidget(self._make_sidebar_btn("Preferências", 8))
 
         layout.addWidget(self._sidebar)
 
@@ -87,14 +94,17 @@ class MainWindow(QMainWindow):
         page4 = self._make_mount_page()
         self._pages.append(page4)
 
-        page5 = CheckToolWidget(self.rclone)
+        page5 = SyncFolderList(self.rclone, self.sync_folder_service)
         self._pages.append(page5)
 
-        page6 = self._make_transfer_page()
+        page6 = CheckToolWidget(self.rclone)
         self._pages.append(page6)
 
-        page7 = self._make_prefs_page()
+        page7 = self._make_transfer_page()
         self._pages.append(page7)
+
+        page8 = self._make_prefs_page()
+        self._pages.append(page8)
 
         for p in self._pages:
             self._stack.addWidget(p)
@@ -145,6 +155,27 @@ class MainWindow(QMainWindow):
                 "https://rclone.org/install/\n\n"
                 "Ou configure o caminho manualmente em Preferências."
             )
+
+    def _first_run_check(self):
+        if self.db.get_config("first_run_completed", 0):
+            return
+        sync_dir = Path.home() / "RcloneSync"
+        sync_dir.mkdir(parents=True, exist_ok=True)
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Bem-vindo ao Rclone GUI")
+        msg.setText(
+            "Primeira execução detectada!\n\n"
+            "A pasta ~/RcloneSync/ foi criada para sincronização bidirecional "
+            "com seus remotos.\n\n"
+            "Você pode configurar pastas de sincronização na página "
+            "'Sync Folders' no menu lateral.\n\n"
+            "Recomendado:\n"
+            "1. Configure seus remotos em 'Remotos'\n"
+            "2. Vá em 'Sync Folders' e adicione uma pasta\n\n"
+            "Você pode alterar as configurações em Preferências a qualquer momento."
+        )
+        msg.exec()
+        self.db.set_config("first_run_completed", 1)
 
     def _make_mount_page(self) -> QWidget:
         from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel

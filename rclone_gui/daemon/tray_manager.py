@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QApplication
 
 class TrayManager(QObject):
     show_window_requested = Signal()
+    sync_folder_triggered = Signal(int)
     quit_requested = Signal()
 
     def __init__(self, parent: Optional[QObject] = None):
@@ -16,6 +17,7 @@ class TrayManager(QObject):
         self.tray: Optional[QSystemTrayIcon] = None
         self._menu: Optional[QMenu] = None
         self._mount_submenu: Optional[QMenu] = None
+        self._sync_folder_submenu: Optional[QMenu] = None
         self._status = "ok"  # ok, busy, error
 
     def setup(self):
@@ -52,6 +54,10 @@ class TrayManager(QObject):
         self._menu.addMenu(self._mount_submenu)
         self._update_mount_menu([])
 
+        self._sync_folder_submenu = QMenu("Sync Folders", self._menu)
+        self._menu.addMenu(self._sync_folder_submenu)
+        self._update_sync_folder_menu([])
+
         self._menu.addSeparator()
 
         quit_action = QAction("Sair", self._menu)
@@ -67,6 +73,22 @@ class TrayManager(QObject):
         else:
             for m in mounts:
                 self._mount_submenu.addAction(f"Abrir {m}")
+
+    def _update_sync_folder_menu(self, folders: list[tuple[int, str, str]]):
+        self._sync_folder_submenu.clear()
+        if not folders:
+            self._sync_folder_submenu.addAction("Nenhuma pasta configurada")
+        else:
+            for fid, name, status in folders:
+                label = f"{'🟢' if status == 'active' else '🔴'} {name}"
+                act = self._sync_folder_submenu.addAction(label)
+                act.setData(fid)
+                act.triggered.connect(
+                    lambda checked, fid=fid: self.sync_folder_triggered.emit(fid)
+                )
+
+    def set_sync_folders(self, folders: list[tuple[int, str, str]]):
+        self._update_sync_folder_menu(folders)
 
     def set_status(self, status: str, message: str = ""):
         self._status = status

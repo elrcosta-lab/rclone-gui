@@ -1,8 +1,8 @@
 # PRD — Rclone GUI
 
 > **Status:** Implementado (MVP)
-> **Versão:** 1.5
-> **Última atualização:** 2026-07-04
+> **Versão:** 1.6
+> **Última atualização:** 2026-07-05
 > **Responsável:** Emerson
 
 ---
@@ -94,6 +94,7 @@ Funcionalidades essenciais para o lançamento inicial:
 | RF-13 | Notificações do Sistema | Enviar notificação nativa do desktop (D-Bus/freedesktop) ao concluir job (sucesso ou falha), ao detectar erro de mount, ou ao atingir limite de quota. | Média |
 | RF-14 | Janela de Preferências | Tela de configurações globais: caminho do binário `rclone`, caminho do `rclone.conf`, porta do RC API, limites padrão de transfers/checkers, idioma, comportamento do tray (minimizar para tray vs. fechar). | Alta |
 | RF-15 | Suporte a Filtros | Interface para construir regras de filtro (`--include`, `--exclude`, `--filter`, `--files-from`, `--min-size`, `--max-age`, etc.) com preview visual de padrões, usadas em jobs de sync e listagens. | Média |
+| RF-16 | Pastas de Sincronização (Sync Folders) | Pastas locais sincronizadas bidirecionalmente com remotos via `rclone bisync`. Detecção de alterações locais por inotify (watchdog), polling remoto periódico (default 5 min), debounce configurável (default 5 s), resolução automática de conflitos (newest wins). Gerenciadas pelo daemon em background com submenu no tray. First-run: cria `~/RcloneSync/`. | Alta |
 
 ### 3.2 Pós-MVP (Roadmap Futuro)
 
@@ -226,3 +227,4 @@ O seguinte está explicitamente **fora** do escopo do MVP:
 | 1.3 | 2026-07-04 | Emerson | Validação completa contra rclone real + Google Drive (36/36 passando). Fix: `about` timeout 15→90s configurável. Fix: DB singleton isolation (closeEvent não mais fecha conn). Fix: rcd endpoint GET→POST. `about()` aceita `timeout` param. `notification.py` adiciona `setup_autostart`/`remove_autostart`. `preferences.py` guard `conn is None`. Build-backend corrigido para `setuptools.build_meta` |
 | 1.4 | 2026-07-04 | Emerson | Remoção de todos os placeholders: transferência copy/move real no two-panel (RcloneService.copy/move), execução real de jobs via JobService.execute_job, edição de remotos via config_show/config_update. Fix: QFileSystemModel.refresh() inexistente no Qt6 → setRootPath. Fix: race condition no explorer (blockSignals + guard _is_local). 132/132 testes + 36/36 validação passando |
 | 1.5 | 2026-07-04 | Emerson | Fix crítico: Explorer — `threading.Thread` → `QThread` + `moveToThread` worker pattern. Fix: `dict` em `QVariant` (Qt.UserRole+1) → JSON serializado. Fix: `_items_by_row` removido, navegação via `index.data()` independente de sort order. Fix: QThread lifecycle (shutdown/closeEvent) evita crash ao fechar app. 162 testes passando (21 funcionais E2E novos). Teste de copy E2E usa JSON metadata real nos QStandardItems |
+| 1.6 | 2026-07-05 | Emerson | RF-16: Pastas de Sincronização (Sync Folders) — model, DB v2, SyncFolderService, watcher (inotify+debounce), poller (QTimer), manager, daemon (QCoreApplication), GUI (SyncFolderList+SyncFolderEditor), tray submenu, first-run, bisync flags em JobEditor. 86+ unit tests passando |

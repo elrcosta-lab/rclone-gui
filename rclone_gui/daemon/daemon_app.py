@@ -9,9 +9,13 @@ import time
 from pathlib import Path
 from typing import Optional
 
+from PySide6.QtCore import QCoreApplication, QTimer
+
 from ..db.database import Database
 from ..services.job_service import JobService
 from ..services.rclone_service import RcloneService
+from ..services.sync_folder_service import SyncFolderService
+from .sync_folder_manager import SyncFolderManager
 
 
 class RCDManager:
@@ -107,41 +111,46 @@ class Scheduler:
 
 class DaemonApp:
     def __init__(self):
+        self._app = QCoreApplication(sys.argv)
         self.db = Database.get_instance()
         self.db.connect()
         self.rclone = RcloneService()
         self.job_service = JobService(self.db)
+        self.sync_folder_service = SyncFolderService(self.db)
+        self.sync_manager = SyncFolderManager(self.sync_folder_service)
         self.scheduler = Scheduler(self.job_service)
         self.rcd = RCDManager(
             port=self.db.get_config("rcd_port", 5572),
             user=self.db.get_config("rcd_user", "rgui"),
             password=self.db.get_config("rcd_pass_hash", ""),
         )
-        self._running = False
 
     def start(self):
-        self._running = True
         self.rcd.start()
-        self._run_loop()
+        self.sync_manager.start_all()
+        self._heartbeat_timer = QTimer()
+        self._heartbeat_timer.timeout.connect(self._heartbeat)
+        self._heartbeat_timer.start(30000)
+
+    def _heartbeat(self):
+        self.scheduler.scan_and_execute()
+        if not self.rcd.is_healthy():
+            self.rcd.stop()
+            self.rcd.start()
 
     def stop(self):
-        self._running = False
+        if hasattr(self, "_heartbeat_timer") and self._heartbeat_timer.isActive():
+            self._heartbeat_timer.stop()
+        self.sync_manager.stop_all()
         self.rcd.stop()
         self.db.close()
-
-    def _run_loop(self):
-        import select
-        while self._running:
-            self.scheduler.scan_and_execute()
-            if not self.rcd.is_healthy():
-                self.rcd.stop()
-                self.rcd.start()
-            time.sleep(30)
+        self._app.quit()
 
     def run(self):
         signal.signal(signal.SIGINT, lambda s, f: self.stop())
         signal.signal(signal.SIGTERM, lambda s, f: self.stop())
         self.start()
+        return self._app.exec()
 
 
 def main():
