@@ -153,6 +153,25 @@ class RcloneService:
             return True, ""
         return False, r.stderr.strip() or r.stdout.strip()
 
+    def bisync(self, source: str, destination: str,
+               conflict_resolution: str = "newer",
+               resync: bool = False,
+               **flags) -> tuple[bool, str]:
+        args = ["bisync", source, destination,
+                "--conflict-resolve", conflict_resolution]
+        if resync:
+            args.append("--resync")
+        for k, v in flags.items():
+            if isinstance(v, bool):
+                if v:
+                    args.append(f"--{k.replace('_', '-')}")
+            else:
+                args.append(f"--{k.replace('_', '-')}={v}")
+        r = self._run(*args, timeout=600)
+        if r.returncode == 0:
+            return True, ""
+        return False, r.stderr.strip() or r.stdout.strip()
+
     @classmethod
     def load_backends_catalog(cls) -> list[BackendMeta]:
         if BACKENDS_JSON.exists():
