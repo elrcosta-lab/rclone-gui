@@ -103,6 +103,8 @@ class SyncFolderEditor(QDialog):
             return
         self._config.name = name
         self._config.local_path = local_path
+        if ":" not in remote_path:
+            remote_path += ":"
         self._config.remote_path = remote_path
         self._config.polling_interval = self._polling_spin.value()
         self._config.debounce_seconds = self._debounce_spin.value()

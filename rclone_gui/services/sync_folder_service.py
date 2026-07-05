@@ -31,6 +31,8 @@ class SyncFolderService:
         expanded = str(Path(config.local_path).expanduser().resolve())
         os.makedirs(expanded, exist_ok=True)
         config.local_path = expanded
+        if ":" not in config.remote_path:
+            config.remote_path += ":"
         return self.db.save_sync_folder(config)
 
     def get_all(self) -> list[SyncFolderConfig]:
@@ -56,6 +58,8 @@ class SyncFolderService:
         if not cfg:
             return False, "Pasta de sincroniza\u00e7\u00e3o n\u00e3o encontrada"
         now = datetime.now(timezone.utc).isoformat()
+        if ":" not in cfg.remote_path:
+            cfg.remote_path += ":"
         ok, msg = self.rclone.bisync(
             cfg.local_path, cfg.remote_path,
             conflict_resolution=cfg.conflict_resolution,
