@@ -20,14 +20,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Tray submenu "Sync Folders" com status e atalho para sincronizar
 - First-run wizard: cria `~/RcloneSync/` e exibe boas-vindas
 - Bisync flags no JobEditor: `--resync`, `--conflict-resolve`, `--workgroup` (ativo apenas para tipo bisync)
+- **Unificação GUI/Daemon/Tray**: `RcloneGUI` (`__main__.py`) inicia daemon (rcd, scheduler, sync folders) + tray no mesmo processo; janela só abre quando usuário clica no tray
+- `MainWindow` aceita serviços injetados (`rclone`, `job_service`, `sync_folder_service`, `tray`)
+- `_check_rclone()` aprimorado: pergunta se deseja instalar rclone via `curl rclone.org/install.sh | sudo bash`
+- **Empacotamento .deb**: `scripts/build-deb.sh` (fpm), `postinst.sh`, `prerm.sh`, desktop files, ícone SVG
 - 22 novos testes unitários (model, service, watcher, poller, manager)
 
 ### Alterado
 - `pyproject.toml`: dependência `watchdog>=3.0` adicionada
 - `rclone_gui/daemon/daemon_app.py`: blocking loop substituído por QCoreApplication + QTimer heartbeat; integra SyncFolderManager
-- `rclone_gui/gui/main_window.py`: sidebar ganha página "Sync Folders" (índice 5, desloca Verificação→6, Transferir→7, Preferências→8)
-- `rclone_gui/daemon/tray_manager.py`: novo signal `sync_folder_triggered`, submenu Sync Folders com status
-- 86 unit tests passando (anteriormente: 56 + 4 sync + 26 watcher/poller/manager)
+- `rclone_gui/gui/main_window.py`: sidebar ganha página "Sync Folders" (índice 5, desloca Verificação→6, Transferir→7, Preferências→8); `closeEvent` não limpa mais tray/db
+- `rclone_gui/daemon/tray_manager.py`: novo signal `sync_folder_triggered`, submenu Sync Folders com status, `parent` opcional
+- `rclone_gui/__main__.py`: modo padrão inicia `RcloneGUI` (daemon + tray + lazy window); `--daemon` mantido para headless
+- 192 testes passando (anteriormente: 86 unit + 26 contract + 13 integration + 23 regression + 38 e2e + 6 validation)
 
 ## [0.2.0] — 2026-07-04
 
