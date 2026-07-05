@@ -13,7 +13,7 @@ class TrayManager(QObject):
     quit_requested = Signal()
 
     def __init__(self, parent: Optional[QObject] = None):
-        super().__init__(parent)
+        super().__init__(parent or QApplication.instance())
         self.tray: Optional[QSystemTrayIcon] = None
         self._menu: Optional[QMenu] = None
         self._mount_submenu: Optional[QMenu] = None

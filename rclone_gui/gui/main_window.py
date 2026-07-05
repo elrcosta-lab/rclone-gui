@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QProcess
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QStackedWidget, QLabel, QStatusBar, QMessageBox, QApplication,
@@ -29,13 +29,16 @@ from .common.styles import apply_theme
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, rclone: Optional[RcloneService] = None,
+                 job_service: Optional[JobService] = None,
+                 sync_folder_service: Optional[SyncFolderService] = None,
+                 tray: Optional[TrayManager] = None):
         super().__init__()
         self.db = Database.get_instance()
-        self.rclone = RcloneService()
-        self.job_service = JobService(self.db)
-        self.sync_folder_service = SyncFolderService(self.db)
-        self.tray = TrayManager(self)
+        self.rclone = rclone or RcloneService()
+        self.job_service = job_service or JobService(self.db)
+        self.sync_folder_service = sync_folder_service or SyncFolderService(self.db)
+        self.tray = tray or TrayManager(self)
 
         self._setup_ui()
         self._connect_signals()
@@ -142,19 +145,58 @@ class MainWindow(QMainWindow):
         if version:
             self._version_label.setText(f"rclone {version.split()[1] if len(version.split()) > 1 else ''}")
             self._status.showMessage("rclone encontrado", 3000)
-            self._pages[0].refresh()  # remote list
+            self._pages[0].refresh()
             remotes = self.rclone.list_remotes()
             self._pages[1].set_remotes(remotes)
         else:
             self._version_label.setText("rclone não encontrado")
             self._status.showMessage("ERRO: rclone não encontrado no PATH", 10000)
-            QMessageBox.critical(
+            reply = QMessageBox.question(
                 self, "rclone não encontrado",
-                "O binário 'rclone' não foi encontrado no PATH.\n\n"
-                "Instale o rclone para usar esta aplicação:\n"
-                "https://rclone.org/install/\n\n"
-                "Ou configure o caminho manualmente em Preferências."
+                "O rclone não está instalado no sistema.\n\n"
+                "Deseja instalar o rclone agora?\n\n"
+                "Isso executará o script oficial de instalação:\n"
+                "  curl https://rclone.org/install.sh | sudo bash",
+                QMessageBox.Yes | QMessageBox.No,
             )
+            if reply == QMessageBox.Yes:
+                self._install_rclone()
+
+    def _install_rclone(self):
+        self._status.showMessage("Instalando rclone...")
+        self._process = QProcess(self)
+        self._process.setProgram("bash")
+        self._process.setArguments(["-c", "curl https://rclone.org/install.sh | sudo bash"])
+        self._process.finished.connect(self._on_rclone_install_finished)
+        self._process.errorOccurred.connect(self._on_rclone_install_error)
+        self._process.start()
+
+    def _on_rclone_install_finished(self, exit_code: int):
+        if exit_code == 0:
+            QMessageBox.information(
+                self, "Instalação concluída",
+                "rclone foi instalado com sucesso!\n\n"
+                "Reinicie a aplicação para usar o rclone.",
+            )
+            self._status.showMessage("rclone instalado. Reinicie a aplicação.", 10000)
+        else:
+            QMessageBox.critical(
+                self, "Erro na instalação",
+                "A instalação do rclone falhou.\n\n"
+                "Tente instalar manualmente:\n"
+                "  curl https://rclone.org/install.sh | sudo bash\n\n"
+                "Ou veja: https://rclone.org/install/",
+            )
+            self._status.showMessage("Falha na instalação do rclone", 5000)
+
+    def _on_rclone_install_error(self, error):
+        QMessageBox.critical(
+            self, "Erro na instalação",
+            f"Não foi possível iniciar a instalação.\n{error}\n\n"
+            "Tente instalar manualmente:\n"
+            "  curl https://rclone.org/install.sh | sudo bash",
+        )
+        self._status.showMessage("Falha ao iniciar instalação do rclone", 5000)
 
     def _first_run_check(self):
         if self.db.get_config("first_run_completed", 0):
@@ -216,8 +258,6 @@ class MainWindow(QMainWindow):
             self._pages[2].refresh()
 
     def closeEvent(self, event):
-        self.tray.cleanup()
-        self.db.close()
         event.accept()
 
     def _quit(self):

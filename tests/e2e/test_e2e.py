@@ -13,7 +13,7 @@ from pytest_mock import MockerFixture
 
 # For Qt tests, we need QApplication running
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QPushButton, QListWidget, QLabel
+from PySide6.QtWidgets import QApplication, QPushButton, QListWidget, QLabel, QMessageBox
 
 
 # Fixture scoped to session for QApplication
@@ -60,6 +60,7 @@ class TestAppStartup:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -74,6 +75,7 @@ class TestAppStartup:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -94,6 +96,7 @@ class TestAppStartup:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -108,6 +111,7 @@ class TestAppStartup:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -218,6 +222,7 @@ class TestExplorerFlow:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -238,6 +243,7 @@ class TestExplorerFlow:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -257,6 +263,7 @@ class TestExplorerFlow:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=["gdrive", "dropbox"])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -285,6 +292,7 @@ class TestJobsFlow:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -302,6 +310,7 @@ class TestJobsFlow:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         from rclone_gui.gui.jobs.job_editor import JobEditor
@@ -330,6 +339,7 @@ class TestJobsFlow:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         from rclone_gui.gui.jobs.job_editor import JobEditor
@@ -365,6 +375,7 @@ class TestVerificationFlow:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()
@@ -395,6 +406,7 @@ class TestNavigationFlow:
         mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
                      return_value=[])
         mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+        mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
 
         from rclone_gui.gui.main_window import MainWindow
         window = MainWindow()

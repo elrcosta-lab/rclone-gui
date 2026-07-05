@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Rclone GUI (Daemon)
+Comment=Inicia o daemon do Rclone GUI no login
+Exec=rclone-gui
+Terminal=false
+Categories=Utility;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel

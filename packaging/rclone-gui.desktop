@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Rclone GUI
+Comment=Interface gráfica para rclone — sincronize arquivos com a nuvem
+Exec=rclone-gui
+Icon=rclone-gui
+Terminal=false
+Categories=Utility;FileTransfer;Network;
+StartupNotify=true

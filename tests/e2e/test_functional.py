@@ -49,6 +49,7 @@ def e2e_db():
 def basic_mocks(mocker: MockerFixture):
     """Mocks base: rclone presente, sem remotos."""
     mocker.patch("PySide6.QtWidgets.QMessageBox.critical")
+    mocker.patch("PySide6.QtWidgets.QMessageBox.question", return_value=QMessageBox.No)
     mocker.patch("rclone_gui.services.rclone_service.RcloneService.check_version",
                  return_value="rclone v1.68.0")
     mocker.patch("rclone_gui.services.rclone_service.RcloneService.list_remotes",
