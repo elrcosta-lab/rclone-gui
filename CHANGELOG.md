@@ -11,6 +11,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **Sync folders não sincronizavam na primeira execução**: `sync_now()` não passava `--resync`, necessário quando diretório local está vazio e remoto populado. Agora passa `resync=True` automaticamente na primeira sincronização (`last_sync_at is None`).
 - **SyncFolderManager não disparava sync inicial**: ao iniciar uma pasta monitorada, o manager agora chama `request_sync()` via `QTimer.singleShot(0)` para sincronizar imediatamente, sem depender do primeiro tick do poller (5 min).
 - **SyncFolderList não carregava dados ao iniciar**: `refresh()` não era chamado no `__init__`, então o painel ficava vazio até o usuário adicionar/editar/remover. Configurações existentes no banco não apareciam na GUI.
+- **`--conflict-resolve` quebrava no rclone v1.60**: flag adicionada na v1.63. `bisync()` agora só passa `--conflict-resolve` quando `conflict_resolution` não for vazio; default do model alterado de `"newer"` para `""`.
+- **`remote_path` sem `:` não funcionava**: `list_remotes()` remove o `:` do final do remote, mas o rclone precisa do `:` para reconhecer como remote. `register()` e `sync_now()` agora normalizam o `remote_path` adicionando `:` se ausente.
 
 ### Adicionado
 - **RF-16 — Pastas de Sincronização (Sync Folders)**: pastas locais sincronizadas bidirecionalmente com remotos via `rclone bisync`

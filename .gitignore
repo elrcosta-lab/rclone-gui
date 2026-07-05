@@ -28,3 +28,8 @@ Thumbs.db
 .ruff_cache/
 *.prof
 *.log
+
+# Packaging artifacts
+*.deb
+*.rpm
+*.tar.gz
