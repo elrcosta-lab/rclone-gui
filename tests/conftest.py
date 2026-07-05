@@ -142,6 +142,7 @@ def sample_about_output() -> str:
 from rclone_gui.models.job import SyncJob, JobExecution, FilterRule
 from rclone_gui.models.mount import MountConfig
 from rclone_gui.models.remote import BackendMeta
+from rclone_gui.models.sync_folder import SyncFolderConfig
 from rclone_gui.services.rclone_service import RcloneService
 from rclone_gui.services.job_service import JobService
 from rclone_gui.db.database import Database

@@ -8,6 +8,7 @@ from typing import Optional
 
 from ..models.job import FilterRule, JobExecution, SyncJob
 from ..models.mount import MountConfig
+from ..models.sync_folder import SyncFolderConfig
 
 
 def get_db_path() -> str:
@@ -48,6 +49,9 @@ class Database:
         if version < 1:
             self._migrate_v1()
             version = 1
+        if version < 2:
+            self._migrate_v2()
+            version = 2
 
     def _migrate_v1(self):
         self.conn.executescript("""
@@ -131,6 +135,34 @@ class Database:
             INSERT OR IGNORE INTO app_config (id) VALUES (1);
             PRAGMA user_version = 1;
         """)
+        self.conn.commit()
+
+    def _migrate_v2(self):
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS sync_folders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                local_path TEXT NOT NULL UNIQUE,
+                remote_path TEXT NOT NULL,
+                sync_mode TEXT DEFAULT 'bisync',
+                conflict_resolution TEXT DEFAULT 'newer',
+                polling_interval INTEGER DEFAULT 300,
+                debounce_seconds INTEGER DEFAULT 5,
+                enabled INTEGER DEFAULT 1,
+                last_sync_at TEXT,
+                last_sync_status TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+        try:
+            self.conn.execute(
+                "ALTER TABLE app_config ADD COLUMN sync_folder_root_path "
+                "TEXT DEFAULT '~/RcloneSync'"
+            )
+        except sqlite3.OperationalError:
+            pass
+        self.conn.execute("PRAGMA user_version = 2")
         self.conn.commit()
 
     # ---- App Config ----
@@ -343,3 +375,52 @@ class Database:
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )
+
+    # ---- Sync Folders ----
+
+    def save_sync_folder(self, cfg: SyncFolderConfig) -> int:
+        if cfg.id:
+            self.conn.execute(
+                """UPDATE sync_folders SET name=?, local_path=?, remote_path=?,
+                sync_mode=?, conflict_resolution=?, polling_interval=?,
+                debounce_seconds=?, enabled=?, last_sync_at=?,
+                last_sync_status=?, updated_at=datetime('now')
+                WHERE id=?""",
+                (
+                    cfg.name, cfg.local_path, cfg.remote_path,
+                    cfg.sync_mode, cfg.conflict_resolution,
+                    cfg.polling_interval, cfg.debounce_seconds,
+                    int(cfg.enabled), cfg.last_sync_at,
+                    cfg.last_sync_status, cfg.id,
+                ),
+            )
+        else:
+            cur = self.conn.execute(
+                """INSERT INTO sync_folders
+                (name, local_path, remote_path, sync_mode, conflict_resolution,
+                 polling_interval, debounce_seconds, enabled, last_sync_at,
+                 last_sync_status)
+                VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    cfg.name, cfg.local_path, cfg.remote_path,
+                    cfg.sync_mode, cfg.conflict_resolution,
+                    cfg.polling_interval, cfg.debounce_seconds,
+                    int(cfg.enabled), cfg.last_sync_at,
+                    cfg.last_sync_status,
+                ),
+            )
+            cfg.id = cur.lastrowid
+        self.conn.commit()
+        return cfg.id
+
+    def get_all_sync_folders(self) -> list[SyncFolderConfig]:
+        rows = self.conn.execute(
+            "SELECT * FROM sync_folders ORDER BY name"
+        ).fetchall()
+        return [SyncFolderConfig.from_row(r) for r in rows]
+
+    def delete_sync_folder(self, folder_id: int):
+        self.conn.execute(
+            "DELETE FROM sync_folders WHERE id=?", (folder_id,)
+        )
+        self.conn.commit()
